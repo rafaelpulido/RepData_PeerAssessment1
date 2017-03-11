@@ -8,6 +8,7 @@ output: html_document
 ## Loading and preprocessing the data
 
 ```{r, results = 'hide', message = FALSE}
+knitr::opts_chunk$set(fig.path = "figure/")
 data <- read.csv("activity.csv")
 library(knitr)
 library(ggplot2)
@@ -59,22 +60,22 @@ The code to impute the missing values using average steps by intervales is the f
 ```{r, resuls = 'hide', message = FALSE}
 library(Hmisc)
 library(plyr)
-data3 <- group_by(data, interval)
-data3 <- as.data.frame(mutate(data3, steps = impute(steps, mean)))
-data3$steps <- as.numeric(data3$steps)
+data <- group_by(data, interval)
+data <- as.data.frame(mutate(data, steps = impute(steps, mean)))
+data$steps <- as.numeric(data$steps)
 ```
 
 Using the following code to see a table with means and medians of each day after imputing missing values don't seem to be diferent from the previous data.
-```{r, results = "hide"}
+```{r}
 detach(package:Hmisc)
 detach(package:plyr)
-data4 <- group_by(data3, date)
-kable(summarize(data4, mean = mean(steps), median = median(steps)), digits = 2)
+data2 <- group_by(data, date)
+kable(summarize(data2, mean = mean(steps), median = median(steps)), digits = 2)
 ```
 
 The following plot uses the data where missing values were imputed. It seems not to be so different from the previous plot with missing values.
 ```{r}
-his3 <- ggplot(data3, aes(date, steps))
+his3 <- ggplot(data, aes(date, steps))
 his3  + geom_bar(stat = "identity", na.rm = TRUE)
 ```
 
@@ -82,12 +83,12 @@ his3  + geom_bar(stat = "identity", na.rm = TRUE)
 
 Let's create first a factor variable for weekends and weekdays.
 ```{r}
-data3$day <- factor(ifelse(weekdays(data3$date) == "Sunday" | weekdays(data3$date) == "Saturday", "Weekday", "Weekend"))
+data$day <- factor(ifelse(weekdays(data$date) == "Sunday" | weekdays(data$date) == "Saturday", "Weekday", "Weekend"))
 ```
 
 If we see the following plots, we can notice two differences between weekdays and weekends. First, activity on weekdays seems to be higher compared to weekends. However, and this is the second diferences, the morningn intervals during the weekeends are more intensive.
 ```{r}
-his3 <- ggplot(data3, aes(interval, steps))
+his3 <- ggplot(data, aes(interval, steps))
 his3  + stat_summary(fun.y = "mean", geom = "line") + facet_grid(day ~ .)
 ```
 
