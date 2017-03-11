@@ -1,25 +1,95 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Assigment 2"
+author: "Rafael Pulido"
+date: "3/10/2017"
+output: html_document
 ---
-
 
 ## Loading and preprocessing the data
 
-
+```{r, results = 'hide', message = FALSE}
+knitr::opts_chunk$set(fig.path = "figure/")
+data <- read.csv("activity.csv")
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(xtable)
+library(lattice)
+data$date <- as.Date(as.character(data$date))
+data$steps <- as.numeric(data$steps)
+```
 
 ## What is mean total number of steps taken per day?
 
+You can a see a histogram that shows the number of steps taken each day along the period of study.
+```{r, warning = FALSE}
+his <- ggplot(data, aes(date, steps))
+his  + geom_bar(stat = "identity", na.rm = TRUE)
+```
 
+You can also see a table that describe the mean and median for each day of study.
+```{r, results = 'asis'}
+data2 <- group_by(data, date)
+kable(summarize(data2, mean = mean(steps, na.rm = FALSE), median = median(steps, na.rm = FALSE)), digits = 2)
+```
 
 ## What is the average daily activity pattern?
 
-
+To observe the activity along the day by intervals, a time series plot was created as follows.
+```{r}
+stepsinterval <- aggregate(steps ~ interval , data = data, FUN = mean) 
+with(stepsinterval, plot(interval, steps, type = "l", main ="", ylab = "Step (mean)"))
+```
+```{r, results = 'hide'}
+steps <- max(stepsinterval$steps)
+interval <- stepsinterval[stepsinterval$steps == steps, 1]
+```
+The interval with the highest number of steps on averages is the `r interval` interval with `r steps` steps on average.
 
 ## Imputing missing values
 
+The number of missin values can be read in the following table.
+```{r}
+nas <- table(is.na(data$steps))
+names(nas) <- c("Values", "Missing Values")
+print(nas)
+```
+
+The code to impute the missing values using average steps by intervales is the following:
+
+```{r, resuls = 'hide', message = FALSE}
+library(Hmisc)
+library(plyr)
+data <- group_by(data, interval)
+data <- as.data.frame(mutate(data, steps = impute(steps, mean)))
+data$steps <- as.numeric(data$steps)
+```
+
+Using the following code to see a table with means and medians of each day after imputing missing values don't seem to be diferent from the previous data.
+```{r}
+detach(package:Hmisc)
+detach(package:plyr)
+data2 <- group_by(data, date)
+kable(summarize(data2, mean = mean(steps), median = median(steps)), digits = 2)
+```
+
+The following plot uses the data where missing values were imputed. It seems not to be so different from the previous plot with missing values.
+```{r}
+his3 <- ggplot(data, aes(date, steps))
+his3  + geom_bar(stat = "identity", na.rm = TRUE)
+```
+
+##Are there differences in activity patterns between weekdays and weekends?
+
+Let's create first a factor variable for weekends and weekdays.
+```{r}
+data$day <- factor(ifelse(weekdays(data$date) == "Sunday" | weekdays(data$date) == "Saturday", "Weekday", "Weekend"))
+```
+
+If we see the following plots, we can notice two differences between weekdays and weekends. First, activity on weekdays seems to be higher compared to weekends. However, and this is the second diferences, the morningn intervals during the weekeends are more intensive.
+```{r}
+his3 <- ggplot(data, aes(interval, steps))
+his3  + stat_summary(fun.y = "mean", geom = "line") + facet_grid(day ~ .)
+```
 
 
-## Are there differences in activity patterns between weekdays and weekends?
